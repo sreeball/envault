@@ -90,4 +90,5 @@ class TestCliSyncStatus:
         result = runner.invoke(cli, ["sync", "status", remote_path,
                                      "--vault", vault_path,
                                      "--password", PASSWORD])
+        assert result.exit_code == 0
         assert "In sync" in result.output
