@@ -46,6 +46,20 @@ def get(vault: str, password: str, key: str) -> None:  # noqa: A001
     click.echo(value)
 
 
+@cli.command("delete")
+@click.option("--vault", default=DEFAULT_VAULT, show_default=True, help="Path to vault file.")
+@click.option("--password", prompt=True, hide_input=True, help="Vault password.")
+@click.argument("key")
+def delete(vault: str, password: str, key: str) -> None:
+    """Delete a secret by KEY from the vault."""
+    v = get_vault(vault, password)
+    if v.get(key) is None:
+        click.echo(f"Key '{key}' not found.", err=True)
+        sys.exit(1)
+    v.delete(key)
+    click.echo(f"Deleted '{key}'.")
+
+
 @cli.command("list")
 @click.option("--vault", default=DEFAULT_VAULT, show_default=True, help="Path to vault file.")
 @click.option("--password", prompt=True, hide_input=True, help="Vault password.")
