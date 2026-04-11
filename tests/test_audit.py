@@ -12,6 +12,15 @@ def log_path(tmp_path) -> Path:
     return tmp_path / "audit.json"
 
 
+@pytest.fixture
+def populated_log(log_path):
+    """A log file pre-populated with three entries for reuse across tests."""
+    record(log_path, "set", "A")
+    record(log_path, "set", "B")
+    record(log_path, "delete", "A")
+    return log_path
+
+
 class TestRecord:
     def test_creates_log_file(self, log_path):
         record(log_path, "set", "MY_KEY")
@@ -36,11 +45,8 @@ class TestRecord:
         entry = record(log_path, "delete", "SECRET", actor="alice")
         assert entry["actor"] == "alice"
 
-    def test_appends_multiple_entries(self, log_path):
-        record(log_path, "set", "A")
-        record(log_path, "set", "B")
-        record(log_path, "delete", "A")
-        entries = get_log(log_path)
+    def test_appends_multiple_entries(self, populated_log):
+        entries = get_log(populated_log)
         assert len(entries) == 3
 
     def test_log_is_valid_json(self, log_path):
@@ -61,6 +67,12 @@ class TestGetLog:
         assert len(entries) == 2
         assert entries[0]["action"] == "set"
         assert entries[1]["action"] == "get"
+
+    def test_entries_are_ordered_chronologically(self, populated_log):
+        """Entries should be returned in insertion order (oldest first)."""
+        entries = get_log(populated_log)
+        timestamps = [e["timestamp"] for e in entries]
+        assert timestamps == sorted(timestamps)
 
 
 class TestClearLog:
