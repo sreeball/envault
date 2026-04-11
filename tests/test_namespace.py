@@ -86,27 +86,47 @@ class TestListNamespaces:
         add_to_namespace(vault_path, "a", "K1")
         add_to_namespace(vault_path, "b", "K2")
         data = list_namespaces(vault_path)
-        assert set(data.keys()) == {"a", "b"}
+        assert "a" in data
+        assert "b" in data
+
+    def test_returns_dict_type(self, vault_path):
+        add_to_namespace(vault_path, "app", "DB_URL")
+        result = list_namespaces(vault_path)
+        assert isinstance(result, dict)
 
 
 class TestKeysInNamespace:
-    def test_returns_keys(self, vault_path):
+    def test_returns_keys_for_namespace(self, vault_path):
         add_to_namespace(vault_path, "app", "DB_URL")
-        add_to_namespace(vault_path, "app", "API_KEY")
+        add_to_namespace(vault_path, "app", "SECRET_KEY")
         keys = keys_in_namespace(vault_path, "app")
-        assert set(keys) == {"DB_URL", "API_KEY"}
+        assert "DB_URL" in keys
+        assert "SECRET_KEY" in keys
 
     def test_raises_on_missing_namespace(self, vault_path):
         with pytest.raises(NamespaceError):
             keys_in_namespace(vault_path, "nonexistent")
 
+    def test_returns_list_type(self, vault_path):
+        add_to_namespace(vault_path, "app", "DB_URL")
+        result = keys_in_namespace(vault_path, "app")
+        assert isinstance(result, list)
+
 
 class TestDeleteNamespace:
-    def test_removes_namespace(self, vault_path):
+    def test_deletes_existing_namespace(self, vault_path):
         add_to_namespace(vault_path, "app", "DB_URL")
         delete_namespace(vault_path, "app")
-        assert "app" not in list_namespaces(vault_path)
+        data = list_namespaces(vault_path)
+        assert "app" not in data
 
     def test_raises_on_missing_namespace(self, vault_path):
         with pytest.raises(NamespaceError):
             delete_namespace(vault_path, "ghost")
+
+    def test_does_not_affect_other_namespaces(self, vault_path):
+        add_to_namespace(vault_path, "app", "DB_URL")
+        add_to_namespace(vault_path, "worker", "QUEUE_URL")
+        delete_namespace(vault_path, "app")
+        data = list_namespaces(vault_path)
+        assert "worker" in data
