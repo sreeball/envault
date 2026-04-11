@@ -50,6 +50,25 @@ def get_log(log_path: Path) -> List[dict]:
     return _load_log(log_path)
 
 
+def filter_log(log_path: Path, action: Optional[str] = None, key: Optional[str] = None) -> List[dict]:
+    """Return audit entries filtered by action and/or key.
+
+    Args:
+        log_path: Path to the audit log file.
+        action: If provided, only return entries with this action.
+        key: If provided, only return entries for this key.
+
+    Returns:
+        A list of matching audit entries.
+    """
+    entries = _load_log(log_path)
+    if action is not None:
+        entries = [e for e in entries if e.get("action") == action]
+    if key is not None:
+        entries = [e for e in entries if e.get("key") == key]
+    return entries
+
+
 def clear_log(log_path: Path) -> int:
     """Delete all audit entries. Returns number of entries removed."""
     entries = _load_log(log_path)
