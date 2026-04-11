@@ -78,3 +78,39 @@ def watch_once(
             return True
 
     return False
+
+
+def watch_until_deleted(
+    vault_path: Path,
+    callback: Callable[[Path], None],
+    interval: float = 1.0,
+    timeout: Optional[float] = None,
+) -> int:
+    """Poll *vault_path* and call *callback* on each change until the file is deleted.
+
+    Returns the number of change events detected before deletion.
+    Stops when the file no longer exists, after *timeout* seconds, or on interrupt.
+    Raises WatchError if vault_path does not exist at start time.
+    """
+    if not vault_path.exists():
+        raise WatchError(f"Vault file not found: {vault_path}")
+
+    last_mtime = _mtime(vault_path)
+    events = 0
+    elapsed = 0.0
+
+    try:
+        while vault_path.exists():
+            if timeout is not None and elapsed >= timeout:
+                break
+            time.sleep(interval)
+            elapsed += interval
+            current_mtime = _mtime(vault_path)
+            if current_mtime != last_mtime:
+                last_mtime = current_mtime
+                events += 1
+                callback(vault_path)
+    except KeyboardInterrupt:
+        pass
+
+    return events
