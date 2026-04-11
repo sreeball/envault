@@ -2,7 +2,7 @@
 
 import os
 import base64
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
@@ -43,9 +43,23 @@ def decrypt(ciphertext: bytes, password: str) -> str:
     """
     Decrypt ciphertext using a password-derived key.
     Expects salt prepended to the encrypted data.
+
+    Raises:
+        ValueError: If the ciphertext is too short to contain a valid salt,
+            or if decryption fails due to an incorrect password or corrupted data.
     """
+    if len(ciphertext) <= SALT_SIZE:
+        raise ValueError(
+            f"Ciphertext is too short: expected more than {SALT_SIZE} bytes, "
+            f"got {len(ciphertext)}."
+        )
     salt = ciphertext[:SALT_SIZE]
     encrypted = ciphertext[SALT_SIZE:]
     key = derive_key(password, salt)
     fernet = Fernet(key)
-    return fernet.decrypt(encrypted).decode()
+    try:
+        return fernet.decrypt(encrypted).decode()
+    except InvalidToken:
+        raise ValueError(
+            "Decryption failed: incorrect password or corrupted ciphertext."
+        )
