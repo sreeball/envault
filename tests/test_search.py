@@ -58,6 +58,16 @@ class TestSearch:
         with pytest.raises(SearchError, match="Invalid regular expression"):
             search(vault, PASSWORD, "[unclosed", regex=True)
 
+    def test_glob_wildcard_matches_all(self, vault):
+        """A bare '*' glob should return every key in the vault."""
+        results = search(vault, PASSWORD, "*")
+        assert set(results.keys()) == {"DB_HOST", "DB_PORT", "API_KEY", "API_SECRET", "APP_DEBUG"}
+
+    def test_value_match_returns_correct_value(self, vault):
+        """Ensure the returned value is correct when matching by value."""
+        results = search(vault, PASSWORD, "localhost")
+        assert results.get("DB_HOST") == "localhost"
+
 
 class TestListKeysMatching:
     def test_glob_returns_matching_keys(self, vault):
