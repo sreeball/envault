@@ -49,10 +49,23 @@ if not changed:
     print("No changes detected within timeout.")
 ```
 
+### `watch_multi(vault_paths, callback, interval, timeout)`
+
+Watches **multiple** vault files simultaneously. Calls `callback(path)` with the specific file that changed. Returns a dict mapping each path to its change count.
+
+```python
+from envault.watch import watch_multi
+
+paths = [Path("vault.db"), Path("secrets.db")]
+counts = watch_multi(paths, on_change, interval=1.0, timeout=60.0)
+for path, count in counts.items():
+    print(f"{path}: {count} change(s) detected")
+```
+
 ## Hook Integration
 
 Register an `on_change` hook with `envault hooks add` and pass `--fire-hooks` to `watch start`. Every matching hook command will be executed in a shell when a change is detected.
 
 ## Errors
 
-`WatchError` is raised if the vault file does not exist when watching begins.
+`WatchError` is raised if the vault file does not exist when watching begins. When using `watch_multi`, a `WatchError` is raised listing **all** missing paths before polling starts.
