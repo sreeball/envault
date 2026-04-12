@@ -52,6 +52,17 @@ def is_expired(vault_path: Path, key: str) -> bool:
     return _now().timestamp() > entry["expires_at"]
 
 
+def remaining_seconds(vault_path: Path, key: str) -> Optional[float]:
+    """Return the number of seconds until *key* expires, or *None* if no TTL is set.
+
+    Returns a negative value if the TTL has already expired.
+    """
+    entry = get_ttl(vault_path, key)
+    if entry is None:
+        return None
+    return entry["expires_at"] - _now().timestamp()
+
+
 def clear_ttl(vault_path: Path, key: str) -> bool:
     """Remove the TTL entry for *key*. Returns True if an entry existed."""
     path = _ttl_path(vault_path)
