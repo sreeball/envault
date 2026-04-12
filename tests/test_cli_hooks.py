@@ -24,6 +24,10 @@ def _add(runner, vault_path, event, command):
     return runner.invoke(hooks_group, ["add", "--vault", vault_path, event, command])
 
 
+def _remove(runner, vault_path, event, command):
+    return runner.invoke(hooks_group, ["remove", "--vault", vault_path, event, command])
+
+
 class TestAddCmd:
     def test_registers_hook(self, runner, vault_path):
         result = _add(runner, vault_path, "post_set", "echo hi")
@@ -44,16 +48,12 @@ class TestAddCmd:
 class TestRemoveCmd:
     def test_removes_hook(self, runner, vault_path):
         _add(runner, vault_path, "post_set", "echo hi")
-        result = runner.invoke(
-            hooks_group, ["remove", "--vault", vault_path, "post_set", "echo hi"]
-        )
+        result = _remove(runner, vault_path, "post_set", "echo hi")
         assert result.exit_code == 0
         assert "Hook removed" in result.output
 
     def test_remove_nonexistent_fails(self, runner, vault_path):
-        result = runner.invoke(
-            hooks_group, ["remove", "--vault", vault_path, "post_set", "echo ghost"]
-        )
+        result = _remove(runner, vault_path, "post_set", "echo ghost")
         assert result.exit_code != 0
         assert "not found" in result.output
 
