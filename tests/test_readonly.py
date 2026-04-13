@@ -56,6 +56,14 @@ class TestUnmarkReadonly:
         with pytest.raises(ReadOnlyError, match="not marked as read-only"):
             unmark_readonly(vault_path, "MISSING_KEY")
 
+    def test_remaining_keys_unaffected(self, vault_path):
+        """Unmarking one key should not affect other read-only keys."""
+        mark_readonly(vault_path, "KEY_A")
+        mark_readonly(vault_path, "KEY_B")
+        unmark_readonly(vault_path, "KEY_A")
+        assert not is_readonly(vault_path, "KEY_A")
+        assert is_readonly(vault_path, "KEY_B")
+
 
 class TestIsReadonly:
     def test_returns_true_when_marked(self, vault_path):
