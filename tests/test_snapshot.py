@@ -87,15 +87,21 @@ class TestRestoreSnapshot:
 
     def test_raises_on_missing_file(self, vault_path):
         with pytest.raises(SnapshotError, match="not found"):
-            restore_snapshot(vault_path, PASSWORD, "/nonexistent/snap.json")
+            restore_snapshot(vault_path, PASSWORD, "/nonexistent/snapshot.json")
 
 
 class TestDeleteSnapshot:
-    def test_removes_file(self, vault_path):
+    def test_deletes_snapshot_file(self, vault_path):
         snap = create_snapshot(vault_path, PASSWORD)
-        delete_snapshot(vault_path, snap["snapshot"])
-        assert not Path(snap["snapshot"]).exists()
+        snapshot_path = snap["snapshot"]
+        delete_snapshot(snapshot_path)
+        assert not Path(snapshot_path).exists()
 
     def test_raises_on_missing_file(self, vault_path):
         with pytest.raises(SnapshotError, match="not found"):
-            delete_snapshot(vault_path, "/nonexistent/snap.json")
+            delete_snapshot("/nonexistent/snapshot.json")
+
+    def test_removed_from_list(self, vault_path):
+        snap = create_snapshot(vault_path, PASSWORD)
+        delete_snapshot(snap["snapshot"])
+        assert list_snapshots(vault_path) == []
