@@ -40,6 +40,20 @@ def unsubscribe_cmd(vault_path: str, event: str, command: str) -> None:
         raise click.ClickException(str(exc)) from exc
 
 
+def _parse_context_items(context: tuple[str, ...]) -> dict[str, str]:
+    """Parse KEY=VALUE context items into a dictionary.
+
+    Raises click.BadParameter if any item is not in KEY=VALUE format.
+    """
+    ctx: dict[str, str] = {}
+    for item in context:
+        if "=" not in item:
+            raise click.BadParameter(f"Expected KEY=VALUE, got: {item}")
+        k, v = item.split("=", 1)
+        ctx[k] = v
+    return ctx
+
+
 @notify_group.command("fire")
 @click.argument("vault_path")
 @click.argument("event")
@@ -47,12 +61,7 @@ def unsubscribe_cmd(vault_path: str, event: str, command: str) -> None:
               help="Context variables passed as ENVAULT_<KEY> env vars.")
 def fire_cmd(vault_path: str, event: str, context: tuple[str, ...]) -> None:
     """Manually fire EVENT and run all registered handlers."""
-    ctx: dict = {}
-    for item in context:
-        if "=" not in item:
-            raise click.BadParameter(f"Expected KEY=VALUE, got: {item}")
-        k, v = item.split("=", 1)
-        ctx[k] = v
+    ctx = _parse_context_items(context)
     try:
         results = fire(vault_path, event, ctx or None)
         if not results:
