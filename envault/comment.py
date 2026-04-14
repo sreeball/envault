@@ -19,7 +19,10 @@ def _load_comments(vault_path: str) -> Dict[str, List[str]]:
     if not cp.exists():
         return {}
     with cp.open() as f:
-        return json.load(f)
+        try:
+            return json.load(f)
+        except json.JSONDecodeError as e:
+            raise CommentError(f"Failed to parse comments file '{cp}': {e}") from e
 
 
 def _save_comments(vault_path: str, data: Dict[str, List[str]]) -> None:
