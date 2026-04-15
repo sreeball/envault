@@ -26,11 +26,24 @@ Raises `CascadeError` if any vault is missing or cannot be decrypted.
 
 Return the highest-priority vault path that contains `key`, or `None`.
 
+### `audit(vault_paths, password) -> dict[str, Path]`
+
+Return a mapping of every key across all vaults to the vault path that would
+win during resolution. Useful for inspecting which vault "owns" each secret
+without performing a full `resolve`.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `vault_paths` | `list[Path]` | Ordered paths; index 0 has highest priority. |
+| `password` | `str` | Shared decryption password for every vault. |
+
+Raises `CascadeError` if any vault is missing or cannot be decrypted.
+
 ## Example
 
 ```python
 from pathlib import Path
-from envault.cascade import resolve, sources
+from envault.cascade import resolve, sources, audit
 
 vaults = [
     Path("local.vault"),   # developer overrides
@@ -43,6 +56,11 @@ print(secrets["DATABASE_URL"])
 
 origin = sources(vaults, password="s3cr3t", key="DATABASE_URL")
 print(f"DATABASE_URL comes from {origin}")
+
+# See which vault owns every key
+ownership = audit(vaults, password="s3cr3t")
+for key, vault_path in ownership.items():
+    print(f"{key:30s} → {vault_path}")
 ```
 
 ## Notes
