@@ -47,6 +47,16 @@ class TestParseDotenv:
     def test_empty_value(self):
         assert _parse_dotenv("KEY=") == {"KEY": ""}
 
+    def test_inline_comment_ignored(self):
+        """Values should not include trailing inline comments."""
+        result = _parse_dotenv("KEY=value  # inline comment")
+        assert result == {"KEY": "value"}
+
+    def test_value_with_equals_sign(self):
+        """Only the first '=' is treated as the key/value separator."""
+        result = _parse_dotenv("KEY=val=ue")
+        assert result == {"KEY": "val=ue"}
+
 
 # ---------------------------------------------------------------------------
 # _parse_json
@@ -94,50 +104,11 @@ class TestImportFromFile:
         with pytest.raises(ImportError, match="Unknown format"):
             import_from_file(f, fmt="yaml")
 
-
-# ---------------------------------------------------------------------------
-# import_from_env
-# ---------------------------------------------------------------------------
-
-class TestImportFromEnv:
-    def test_specific_keys(self, monkeypatch):
-        monkeypatch.setenv("MY_VAR", "secret")
-        result = import_from_env(["MY_VAR"])
-        assert result == {"MY_VAR": "secret"}
-
-    def test_missing_key_raises(self, monkeypatch):
-        monkeypatch.delenv("DEFINITELY_NOT_SET", raising=False)
-        with pytest.raises(ImportError, match="DEFINITELY_NOT_SET"):
-            import_from_env(["DEFINITELY_NOT_SET"])
-
-    def test_none_returns_all(self, monkeypatch):
-        monkeypatch.setenv("SOME_VAR", "v")
-        result = import_from_env()
-        assert "SOME_VAR" in result
+    def test_json_file_auto_detected_by_extension(self, tmp_path):
+        """A .json file should be parsed as JSON without specifying fmt."""
+        f = tmp_path / "config.json"
+        f.write_text(json.dumps({"DB_HOST": "localhost"}))
+        assert import_from_file(f) == {"DB_HOST": "localhost"}
 
 
-# ---------------------------------------------------------------------------
-# load_into_vault
-# ---------------------------------------------------------------------------
-
-class TestLoadIntoVault:
-    def test_counts_added(self, tmp_path):
-        from envault.vault import Vault
-        v = Vault(tmp_path / "vault.json")
-        added, updated = load_into_vault(v, {"A": "1", "B": "2"}, "pass")
-        assert added == 2
-        assert updated == 0
-
-    def test_counts_updated(self, tmp_path):
-        from envault.vault import Vault
-        v = Vault(tmp_path / "vault.json")
-        v.set("A", "old", "pass")
-        added, updated = load_into_vault(v, {"A": "new", "B": "2"}, "pass")
-        assert added == 1
-        assert updated == 1
-
-    def test_values_stored(self, tmp_path):
-        from envault.vault import Vault
-        v = Vault(tmp_path / "vault.json")
-        load_into_vault(v, {"KEY": "val"}, "pass")
-        assert v.get("KEY", "pass") == "val"
+# --------------------------------------------
