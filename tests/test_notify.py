@@ -63,6 +63,11 @@ class TestUnsubscribe:
         with pytest.raises(NotifyError):
             unsubscribe(vault_path, "set", "echo missing")
 
+    def test_raises_when_event_has_no_subscriptions(self, vault_path):
+        """Unsubscribing from an event with no subscribers should raise NotifyError."""
+        with pytest.raises(NotifyError):
+            unsubscribe(vault_path, "nonexistent_event", "echo a")
+
 
 class TestFire:
     def test_returns_results_list(self, vault_path):
@@ -85,13 +90,20 @@ class TestFire:
         results = fire(vault_path, "nonexistent_event")
         assert results == []
 
+    def test_result_contains_command_key(self, vault_path):
+        """Each result dict should include the command that was executed."""
+        cmd = f"{sys.executable} -c 'pass'"
+        subscribe(vault_path, "set", cmd)
+        results = fire(vault_path, "set")
+        assert results[0]["command"] == cmd
+
 
 class TestListSubscriptions:
     def test_empty_when_no_file(self, vault_path):
         assert list_subscriptions(vault_path) == {}
 
     def test_reflects_subscriptions(self, vault_path):
-        subscribe(vault_path, "set", "echo x")
+        subscribe(vault_path, "set", "echo a")
         subs = list_subscriptions(vault_path)
         assert "set" in subs
-        assert "echo x" in subs["set"]
+        assert "echo a" in subs["set"]
