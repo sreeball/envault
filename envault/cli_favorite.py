@@ -42,9 +42,12 @@ def remove_cmd(vault_path: str, key: str) -> None:
 
 @favorite_group.command("list")
 @click.argument("vault_path")
-def list_cmd(vault_path: str) -> None:
+@click.option("--notes-only", is_flag=True, default=False, help="Only show favorites that have a note.")
+def list_cmd(vault_path: str, notes_only: bool) -> None:
     """List all favorite keys in VAULT_PATH."""
     favs = list_favorites(vault_path)
+    if notes_only:
+        favs = [entry for entry in favs if entry.get("note")]
     if not favs:
         click.echo("No favorites set.")
         return
