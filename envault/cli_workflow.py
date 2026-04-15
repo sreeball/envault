@@ -34,8 +34,11 @@ def create_cmd(name, steps, description, vault_path):
 @workflow_group.command("delete")
 @click.argument("name")
 @click.option("--vault", "vault_path", default="vault.db", show_default=True)
-def delete_cmd(name, vault_path):
+@click.option("--yes", "-y", is_flag=True, help="Skip confirmation prompt.")
+def delete_cmd(name, vault_path, yes):
     """Delete a workflow by NAME."""
+    if not yes:
+        click.confirm(f"Delete workflow '{name}'?", abort=True)
     try:
         delete_workflow(vault_path, name)
         click.echo(f"Workflow '{name}' deleted.")
